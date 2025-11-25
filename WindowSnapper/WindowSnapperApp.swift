@@ -10,7 +10,8 @@ import ApplicationServices
 
 @main
 struct WindowSnapperApp: App {
-     
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     init() {
         let options: CFDictionary = [
                 kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true

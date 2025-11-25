@@ -232,18 +232,18 @@ final class AccessibilityManager {
         print("ORIGIN:",rect.origin)
         //^-----debug-----^
         // TESTING mouse
-        if let point = lastMouseUpLocation {
-            if let mouseUpScreen = screens.first(where: { $0.frame.contains(point) }) {
-                print("USING MOUSE UP SCREEN")
-                return mouseUpScreen
-            }
-        }
+//        if let point = lastMouseUpLocation {
+//            if let mouseUpScreen = screens.first(where: { $0.frame.contains(point) }) {
+//                print("USING MOUSE UP SCREEN")
+//                return mouseUpScreen
+//            }
+//        }
         // TESTING screen
-        for screen in screens {
-            if screen.frame.contains(rect.origin) {
-                return screen
-            }
-        }
+//        for screen in screens {
+//            if screen.frame.contains(rect.origin) {
+//                return screen
+//            }
+//        }
         print("FALLBACK CHECK INTERSECTION")
         return screens.max { a, b in
             let interA = a.frame.intersection(rect)
