@@ -202,9 +202,20 @@ final class AccessibilityManager {
             return
         }
         let screenFrame = screen.visibleFrame
+        print("Screen visibleFrame:", screenFrame)
         let targetAppKit = rectBuilder(screenFrame)
-        let targetAX = convertAppKitToAX(targetAppKit)
+        print("Target AppKit:", targetAppKit)
+        let targetAX = convertAppKitToAX(targetAppKit, screen: screen)
+        print("Target AX:", targetAX)
         setFrame(targetAX, for: window)
+
+        // verify what was actually set
+        if let newFrame = frame(of: window) {
+            print("Window frame after setFrame (AX):", newFrame)
+            let newFrameAppKit = convertAXToAppKit(newFrame)
+            print("Window frame after setFrame (AppKit):", newFrameAppKit)
+            print("Expected: window should fill from y=\(screenFrame.minY) to y=\(screenFrame.maxY) in AppKit")
+        }
     }
 
     private func screenContaining(appKitRect rect: CGRect) -> NSScreen? {
@@ -244,25 +255,31 @@ final class AccessibilityManager {
     }
     
     // NSScreen and AXFrame have different coordinate systems
+    // AX uses the main screen as reference with (0,0) at its top-left corner
     func convertAXToAppKit(_ axRect: CGRect) -> CGRect {
-        guard let maxY = NSScreen.screens.map({ $0.frame.maxY }).max() else {
+        guard let mainScreen = NSScreen.main ?? NSScreen.screens.first else {
             return axRect
         }
+        let mainHeight = mainScreen.frame.height
         return CGRect(
             x: axRect.origin.x,
-            y: maxY - axRect.origin.y - axRect.height,
+            y: mainHeight - axRect.origin.y - axRect.height,
             width: axRect.width,
             height: axRect.height
         )
     }
-    
-    func convertAppKitToAX(_ appRect: CGRect) -> CGRect {
-        guard let maxY = NSScreen.screens.map({ $0.frame.maxY }).max() else {
+
+    func convertAppKitToAX(_ appRect: CGRect, screen: NSScreen) -> CGRect {
+        // AX uses the main screen (with menu bar) as reference
+        // NSScreen.main can change based on focus, so find the screen with menu bar
+        guard let mainScreen = NSScreen.screens.first(where: { $0.frame.origin == .zero }) ?? NSScreen.screens.first else {
             return appRect
         }
+        let mainHeight = mainScreen.frame.height
+        print("DEBUG: Using main screen height: \(mainHeight) from screen at \(mainScreen.frame)")
         return CGRect(
             x: appRect.origin.x,
-            y: maxY - appRect.origin.y - appRect.height,
+            y: mainHeight - appRect.origin.y - appRect.height,
             width: appRect.width,
             height: appRect.height
         )
