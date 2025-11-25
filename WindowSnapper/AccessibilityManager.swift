@@ -11,7 +11,19 @@ import Cocoa
 final class AccessibilityManager {
     static let shared = AccessibilityManager()
     
-    private init() {}
+    private var lastMouseUpLocation: NSPoint?
+    private var mouseUpMonitor: Any?
+    
+    private init() {
+        startMouseUpTracking()
+    }
+    
+    private func startMouseUpTracking() {
+        mouseUpMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] event in
+            self?.lastMouseUpLocation = event.locationInWindow
+            print("Last mouse up at:", event.locationInWindow)
+        }
+    }
     
     // get the frontmost window
     func frontmostWindow() -> AXUIElement? {
@@ -165,28 +177,89 @@ final class AccessibilityManager {
             return
         }
         
-        guard let currentFrame = frame(of: window) else {
+        guard let currentAXFrame = frame(of: window) else {
             print("DEBUG: frame(of:) returned nil")
             return
         }
         
-        guard let screen = screenContaining(rect: currentFrame) else {
+        //v-----debug-----v
+        print ("AX frame:", currentAXFrame)
+        for screen in NSScreen.screens {
+            print("Screen:",screen.frame)
+        }
+        let convertedFrame = convertAXToAppKit(currentAXFrame)
+        print("Converted frame:",convertedFrame)
+        //^-----debug----^
+       
+        guard let screen = screenContaining(appKitRect: convertedFrame) else {
             print("DEBUG: screenContaining(rect:) returned nil")
             return
         }
-
         let screenFrame = screen.visibleFrame
-            let target = rectBuilder(screenFrame)
-            setFrame(target, for: window)
+        let targetAppKit = rectBuilder(screenFrame)
+        let targetAX = convertAppKitToAX(targetAppKit)
+        setFrame(targetAX, for: window)
     }
 
-    private func screenContaining(rect: CGRect) -> NSScreen? {
+    private func screenContaining(appKitRect rect: CGRect) -> NSScreen? {
         let screens = NSScreen.screens
-        return screens.max(by: { (a,b)->Bool in
-            let interA = a.visibleFrame.intersection(rect).area
-            let interB = b.visibleFrame.intersection(rect).area
-            return interA < interB
-        })
+        
+        //v-----debug-----v
+        for screen in screens {
+            let inter = screen.frame.intersection(rect)
+            print("Screen frame:", screen.frame,
+                  "intersection:", inter,
+                  "area:", inter.width*inter.height
+            )
+        }
+        print("ORIGIN:",rect.origin)
+        //^-----debug-----^
+        // TESTING mouse
+        if let point = lastMouseUpLocation {
+            if let mouseUpScreen = screens.first(where: { $0.frame.contains(point) }) {
+                print("USING MOUSE UP SCREEN")
+                return mouseUpScreen
+            }
+        }
+        // TESTING screen
+        for screen in screens {
+            if screen.frame.contains(rect.origin) {
+                return screen
+            }
+        }
+        print("FALLBACK CHECK INTERSECTION")
+        return screens.max { a, b in
+            let interA = a.frame.intersection(rect)
+            let interB = b.frame.intersection(rect)
+            let areaA = interA.width*interA.height
+            let areaB = interB.width*interB.height
+            return areaA < areaB
+        }
+    }
+    
+    // NSScreen and AXFrame have different coordinate systems
+    func convertAXToAppKit(_ axRect: CGRect) -> CGRect {
+        guard let maxY = NSScreen.screens.map({ $0.frame.maxY }).max() else {
+            return axRect
+        }
+        return CGRect(
+            x: axRect.origin.x,
+            y: maxY - axRect.origin.y - axRect.height,
+            width: axRect.width,
+            height: axRect.height
+        )
+    }
+    
+    func convertAppKitToAX(_ appRect: CGRect) -> CGRect {
+        guard let maxY = NSScreen.screens.map({ $0.frame.maxY }).max() else {
+            return appRect
+        }
+        return CGRect(
+            x: appRect.origin.x,
+            y: maxY - appRect.origin.y - appRect.height,
+            width: appRect.width,
+            height: appRect.height
+        )
     }
     
     }

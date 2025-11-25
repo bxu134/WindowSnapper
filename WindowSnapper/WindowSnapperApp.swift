@@ -16,8 +16,11 @@ struct WindowSnapperApp: App {
                 kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true
             ] as CFDictionary
 
-            let trusted = AXIsProcessTrustedWithOptions(options)
-            print("Accessibility trusted: \(trusted)")
+        let trusted = AXIsProcessTrustedWithOptions(options)
+        print("Accessibility trusted: \(trusted)")
+        if trusted {
+            _ = AccessibilityManager.shared
+        }
     }
     
     var body: some Scene {
