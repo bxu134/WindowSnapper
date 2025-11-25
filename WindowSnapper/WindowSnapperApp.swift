@@ -6,20 +6,22 @@
 //
 
 import SwiftUI
+import ApplicationServices
 
 @main
 struct WindowSnapperApp: App {
     var body: some Scene {
+       
         MenuBarExtra("WindowSnapper", systemImage: "rectangle.split.3x1.fill") {
             VStack(alignment: .leading, spacing: 8) {
                 Text("WindowSnapper").font(.headline)
                 
                 Button("Snap Left") {
-                    // Todo
+                    AccessibilityManager.shared.snapFrontmostWindowLeftHalf()
                 }
                 
                 Button("Snap Right") {
-                    // Todo
+                    AccessibilityManager.shared.snapFrontmostWindowRightHalf()
                 }
                 
                 Divider()
