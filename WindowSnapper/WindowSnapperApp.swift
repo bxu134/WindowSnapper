@@ -18,9 +18,6 @@ struct WindowSnapperApp: App {
 
         let trusted = AXIsProcessTrustedWithOptions(options)
         print("Accessibility trusted: \(trusted)")
-        if trusted {
-            _ = AccessibilityManager.shared
-        }
     }
     
     var body: some Scene {
@@ -42,6 +39,9 @@ struct WindowSnapperApp: App {
                 Button("Quit") {
                     NSApplication.shared.terminate(nil)
                 }
+            }
+            .onAppear {
+                AccessibilityManager.shared.startMouseTrackingIfNeeded()
             }
         }
     }

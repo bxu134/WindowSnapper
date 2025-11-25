@@ -25,6 +25,12 @@ final class AccessibilityManager {
         }
     }
     
+    func startMouseTrackingIfNeeded() {
+        if mouseUpMonitor == nil {
+            startMouseUpTracking()
+        }
+    }
+    
     // get the frontmost window
     func frontmostWindow() -> AXUIElement? {
         guard AXIsProcessTrusted() else { return nil }
