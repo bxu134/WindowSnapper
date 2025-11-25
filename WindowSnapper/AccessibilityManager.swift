@@ -15,21 +15,52 @@ final class AccessibilityManager {
     
     // get the frontmost window
     func frontmostWindow() -> AXUIElement? {
-        guard let app = NSWorkspace.shared.frontmostApplication else { return nil }
-        let appElement = AXUIElementCreateApplication(app.processIdentifier)
-        
-        var value: AnyObject?
-        let result = AXUIElementCopyAttributeValue(
-            appElement,
-            kAXFocusedWindowAttribute as CFString,
-            &value
-        )
-        
-        if result == .success {
-            return value as! AXUIElement?
-        } else {
+        guard AXIsProcessTrusted() else { return nil }
+
+        let systemWide = AXUIElementCreateSystemWide()
+
+        var focusedAppValue: AnyObject?
+        guard AXUIElementCopyAttributeValue(
+            systemWide,
+            kAXFocusedApplicationAttribute as CFString,
+            &focusedAppValue
+        ) == .success,
+              let focusedApp = focusedAppValue as! AXUIElement? else {
             return nil
         }
+
+        var windowValue: AnyObject?
+
+        // Try focused window
+        if AXUIElementCopyAttributeValue(
+            focusedApp,
+            kAXFocusedWindowAttribute as CFString,
+            &windowValue
+        ) == .success, let window = windowValue as! AXUIElement? {
+            return window
+        }
+
+        // Try main window
+        if AXUIElementCopyAttributeValue(
+            focusedApp,
+            kAXMainWindowAttribute as CFString,
+            &windowValue
+        ) == .success, let window = windowValue as! AXUIElement? {
+            return window
+        }
+
+        // Try first window from array
+        if AXUIElementCopyAttributeValue(
+            focusedApp,
+            kAXWindowsAttribute as CFString,
+            &windowValue
+        ) == .success,
+           let windows = windowValue as? [AXUIElement],
+           let firstWindow = windows.first {
+            return firstWindow
+        }
+
+        return nil
     }
     
     // gets location and size of the window
