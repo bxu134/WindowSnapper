@@ -143,7 +143,21 @@ final class AccessibilityManager {
         }
     }
     
-    // snap helpers for left/right
+    // snap helpers
+    func snapFrontmostWindowBreak() {
+        snapFrontmostWindow { screenFrame in
+            let width = screenFrame.width * 0.4
+            let height = screenFrame.height * 0.4
+            let originX = screenFrame.midX - width / 2
+            let originY = screenFrame.midY - height / 2
+            return CGRect(
+                x: originX,
+                y: originY,
+                width: width,
+                height: height
+            )
+        }
+    }
     func snapFrontmostWindowLeftHalf() {
         snapFrontmostWindow { screenFrame in
             CGRect(

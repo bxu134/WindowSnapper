@@ -9,6 +9,7 @@ import Cocoa
 import Carbon
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    var breakHotKey: EventHotKeyRef?
     var leftHotKey: EventHotKeyRef?
     var rightHotKey: EventHotKeyRef?
 
@@ -22,7 +23,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // SNAP RIGHT → ⌘ + ⌥ + →
         registerHotKey(keyCode: 124, modifiers: cmdOpt, handlerID: 2)
-
+        
+        // BREAK → ⌘ + ⌥ + X
+        registerHotKey(keyCode: 7, modifiers: cmdOpt, handlerID: 0)
+        
         var eventSpec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard),
                                       eventKind: UInt32(kEventHotKeyPressed))
 
@@ -52,6 +56,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             &hotKeyRef
         )
 
+        if handlerID == 0 { breakHotKey = hotKeyRef }
         if handlerID == 1 { leftHotKey = hotKeyRef }
         if handlerID == 2 { rightHotKey = hotKeyRef }
     }
@@ -80,6 +85,9 @@ let hotKeyCallback: EventHandlerUPP = { _, event, _ in
     )
 
     switch hotKeyID.id {
+    case 0:
+        // break
+        AccessibilityManager.shared.snapFrontmostWindowBreak()
     case 1:
         // snap left
         AccessibilityManager.shared.snapFrontmostWindowLeftHalf()
