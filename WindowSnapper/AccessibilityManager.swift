@@ -178,16 +178,16 @@ final class AccessibilityManager {
         let screenFrame = screen.visibleFrame
             let target = rectBuilder(screenFrame)
             setFrame(target, for: window)
-        }
+    }
 
-        private func screenContaining(rect: CGRect) -> NSScreen? {
-            let screens = NSScreen.screens
-            return screens.max(by: { (a,b)->Bool in
-                let interA = a.visibleFrame.intersection(rect).area
-                let interB = b.visibleFrame.intersection(rect).area
-                return interA < interB
-            })
-        }
+    private func screenContaining(rect: CGRect) -> NSScreen? {
+        let screens = NSScreen.screens
+        return screens.max(by: { (a,b)->Bool in
+            let interA = a.visibleFrame.intersection(rect).area
+            let interB = b.visibleFrame.intersection(rect).area
+            return interA < interB
+        })
+    }
     
     }
 
