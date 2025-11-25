@@ -15,7 +15,7 @@ final class AccessibilityManager {
     private var mouseUpMonitor: Any?
     
     private init() {
-        startMouseUpTracking()
+//        startMouseUpTracking()
     }
     
     private func startMouseUpTracking() {
@@ -35,47 +35,78 @@ final class AccessibilityManager {
     func frontmostWindow() -> AXUIElement? {
         guard AXIsProcessTrusted() else { return nil }
 
-        let systemWide = AXUIElementCreateSystemWide()
-
-        var focusedAppValue: AnyObject?
-        guard AXUIElementCopyAttributeValue(
-            systemWide,
-            kAXFocusedApplicationAttribute as CFString,
-            &focusedAppValue
-        ) == .success,
-              let focusedApp = focusedAppValue as! AXUIElement? else {
+        // get frontmost application, not focused
+        guard let app = NSWorkspace.shared.frontmostApplication else {
             return nil
+        }
+
+        let appElement = AXUIElementCreateApplication(app.processIdentifier)
+
+        // try getting window from focused UI element (to allow for Chrome functionality)
+        var focusedElementValue: AnyObject?
+        if AXUIElementCopyAttributeValue(
+            appElement,
+            kAXFocusedUIElementAttribute as CFString,
+            &focusedElementValue
+        ) == .success,
+           let focusedElement = focusedElementValue as! AXUIElement? {
+
+            var windowValue: AnyObject?
+            if AXUIElementCopyAttributeValue(
+                focusedElement,
+                kAXWindowAttribute as CFString,
+                &windowValue
+            ) == .success, let window = windowValue as! AXUIElement? {
+                return window
+            }
         }
 
         var windowValue: AnyObject?
 
-        // Try focused window
+        // try focused window
         if AXUIElementCopyAttributeValue(
-            focusedApp,
+            appElement,
             kAXFocusedWindowAttribute as CFString,
             &windowValue
         ) == .success, let window = windowValue as! AXUIElement? {
             return window
         }
 
-        // Try main window
+        // try main window
         if AXUIElementCopyAttributeValue(
-            focusedApp,
+            appElement,
             kAXMainWindowAttribute as CFString,
             &windowValue
         ) == .success, let window = windowValue as! AXUIElement? {
             return window
         }
 
-        // Try first window from array
+        // try first window from array
         if AXUIElementCopyAttributeValue(
-            focusedApp,
+            appElement,
             kAXWindowsAttribute as CFString,
             &windowValue
         ) == .success,
-           let windows = windowValue as? [AXUIElement],
-           let firstWindow = windows.first {
-            return firstWindow
+           let windows = windowValue as? [AXUIElement] {
+
+            // logic for regular windows (basically non-chrome)
+            for window in windows {
+                var roleValue: AnyObject?
+                if AXUIElementCopyAttributeValue(
+                    window,
+                    kAXSubroleAttribute as CFString,
+                    &roleValue
+                ) == .success,
+                   let role = roleValue as? String,
+                   role == kAXStandardWindowSubrole as String {
+                    return window
+                }
+            }
+
+            // fallback: return first window
+            if let firstWindow = windows.first {
+                return firstWindow
+            }
         }
 
         return nil

@@ -41,9 +41,9 @@ struct WindowSnapperApp: App {
                     NSApplication.shared.terminate(nil)
                 }
             }
-            .onAppear {
-                AccessibilityManager.shared.startMouseTrackingIfNeeded()
-            }
+//            .onAppear {
+//                AccessibilityManager.shared.startMouseTrackingIfNeeded()
+//            }
         }
     }
 }
