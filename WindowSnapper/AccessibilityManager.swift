@@ -119,6 +119,7 @@ final class AccessibilityManager {
     
     // main snapping function
     func snapFrontmostWindow(using rectBuilder: (CGRect) -> CGRect) {
+        /*
         guard
             let window = frontmostWindow(),
             let currentFrame = frame(of: window),
@@ -127,7 +128,22 @@ final class AccessibilityManager {
             print("No frontmost window or screen")
             return
         }
+        */
+        guard let window = frontmostWindow() else {
+            print("DEBUG: frontmostWindow() returned nil")
+            return
+        }
         
+        guard let currentFrame = frame(of: window) else {
+            print("DEBUG: frame(of:) returned nil")
+            return
+        }
+        
+        guard let screen = screenContaining(rect: currentFrame) else {
+            print("DEBUG: screenContaining(rect:) returned nil")
+            return
+        }
+
         let screenFrame = screen.visibleFrame
             let target = rectBuilder(screenFrame)
             setFrame(target, for: window)

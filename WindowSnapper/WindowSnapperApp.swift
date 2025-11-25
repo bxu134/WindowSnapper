@@ -10,6 +10,16 @@ import ApplicationServices
 
 @main
 struct WindowSnapperApp: App {
+     
+    init() {
+        let options: CFDictionary = [
+                kAXTrustedCheckOptionPrompt.takeRetainedValue() as String: true
+            ] as CFDictionary
+
+            let trusted = AXIsProcessTrustedWithOptions(options)
+            print("Accessibility trusted: \(trusted)")
+    }
+    
     var body: some Scene {
        
         MenuBarExtra("WindowSnapper", systemImage: "rectangle.split.3x1.fill") {
