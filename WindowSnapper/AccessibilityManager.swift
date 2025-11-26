@@ -15,7 +15,7 @@ final class AccessibilityManager {
     private var mouseUpMonitor: Any?
     
     private init() {
-        startMouseUpTracking()
+//        startMouseUpTracking()
     }
     
     private func startMouseUpTracking() {
@@ -217,12 +217,19 @@ final class AccessibilityManager {
         }
         let screenFrame = screen.visibleFrame
         print("Screen visibleFrame:", screenFrame)
+        
+        //v-----testing sectiondetect-----v
+        let section = SectionalLogic.shared.detectSection(appRect: convertedFrame, on: screenFrame)
+        print("Current section:", section)
+        //^-----testing sectiondetect-----^
+        
         let targetAppKit = rectBuilder(screenFrame)
         print("Target AppKit:", targetAppKit)
         let targetAX = convertAppKitToAX(targetAppKit, screen: screen)
         print("Target AX:", targetAX)
         setFrame(targetAX, for: window)
-
+        
+        
         // verify what was actually set
         if let newFrame = frame(of: window) {
             print("Window frame after setFrame (AX):", newFrame)
@@ -271,7 +278,7 @@ final class AccessibilityManager {
     // NSScreen and AXFrame have different coordinate systems
     // AX uses the main screen as reference with (0,0) at its top-left corner
     func convertAXToAppKit(_ axRect: CGRect) -> CGRect {
-        guard let mainScreen = NSScreen.main ?? NSScreen.screens.first else {
+        guard let mainScreen = NSScreen.screens.first(where: { $0.frame.origin == .zero }) ?? NSScreen.screens.first else {
             return axRect
         }
         let mainHeight = mainScreen.frame.height
