@@ -27,6 +27,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // BREAK → ⌘ + ⌥ + X
         registerHotKey(keyCode: 7, modifiers: cmdOpt, handlerID: 0)
         
+        // SNAP UP → ⌘ + ⌥ + ↑
+        registerHotKey(keyCode: 126, modifiers: cmdOpt, handlerID: 3)
+
+        // SNAP DOWN → ⌘ + ⌥ + ↓
+        registerHotKey(keyCode: 125, modifiers: cmdOpt, handlerID: 4)
+        
         var eventSpec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard),
                                       eventKind: UInt32(kEventHotKeyPressed))
 
@@ -88,14 +94,8 @@ let hotKeyCallback: EventHandlerUPP = { _, event, _ in
     case 0:
         // break
         AccessibilityManager.shared.snapFrontmostWindowBreak()
-    case 1:
-        // snap left
-        AccessibilityManager.shared.snapFrontmostWindowLeftHalf()
-    case 2:
-        // snap right
-        AccessibilityManager.shared.snapFrontmostWindowRightHalf()
     default:
-        break
+        AccessibilityManager.shared.snapSectionalLogic(on: hotKeyID.id)
     }
 
     return noErr

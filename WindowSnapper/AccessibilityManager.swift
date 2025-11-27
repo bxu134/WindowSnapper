@@ -211,6 +211,56 @@ final class AccessibilityManager {
         }
     }
     
+    // snap using sectional logic
+    func snapSectionalLogic(on command: UInt32) {
+        guard let window = frontmostWindow() else {
+            print("DEBUG: frontmostWindow() returned nil:")
+            return
+        }
+        
+        guard let currentAXFrame = frame(of: window) else {
+            print("DEBUG: frame(of:) returned nil")
+            return
+        }
+        let convertedFrame = convertAXToAppKit(currentAXFrame)
+        
+        guard let screen = screenContaining(appKitRect: convertedFrame) else {
+            print("DEBUG: screenContaining(rect:) returned nil")
+            return
+        }
+        let screenFrame = screen.visibleFrame
+        
+        if let targetRect = SectionalLogic.shared.snapLogicController(for: command, appRect: convertedFrame, on: screenFrame) {
+            snapFrontmostWindow(
+                screen: screen,
+                window: window,
+                on: screenFrame
+            ) {_ in
+                    targetRect
+                }
+        } else {
+            minimize(window: window)
+        }
+    }
+    
+    func minimize(window: AXUIElement) {
+        var minimized = true as CFBoolean
+        let result = AXUIElementSetAttributeValue(
+            window,
+            kAXMinimizedAttribute as CFString,
+            minimized
+        )
+    }
+    
+    // overloaded function with more inputs --> keep continuity on window, screenframe, screen etc.
+    func snapFrontmostWindow(screen: NSScreen, window: AXUIElement,  on screenFrame: CGRect, using rectBuilder: (CGRect) -> CGRect) {
+        let targetAppKit = rectBuilder(screenFrame)
+        print("Target AppKit:", targetAppKit)
+        let targetAX = convertAppKitToAX(targetAppKit, screen: screen)
+        print("Target AX:", targetAX)
+        setFrame(targetAX, for: window)
+    }
+    
     // main snapping function
     func snapFrontmostWindow(using rectBuilder: (CGRect) -> CGRect) {
         /*
@@ -248,12 +298,19 @@ final class AccessibilityManager {
         }
         let screenFrame = screen.visibleFrame
         print("Screen visibleFrame:", screenFrame)
+        
+        //v-----testing sectiondetect-----v
+        let section = SectionalLogic.shared.detectSection(appRect: convertedFrame, on: screenFrame)
+        print("Current section:", section)
+        //^-----testing sectiondetect-----^
+        
         let targetAppKit = rectBuilder(screenFrame)
         print("Target AppKit:", targetAppKit)
         let targetAX = convertAppKitToAX(targetAppKit, screen: screen)
         print("Target AX:", targetAX)
         setFrame(targetAX, for: window)
-
+        
+        
         // verify what was actually set
         if let newFrame = frame(of: window) {
             print("Window frame after setFrame (AX):", newFrame)
@@ -302,7 +359,7 @@ final class AccessibilityManager {
     // NSScreen and AXFrame have different coordinate systems
     // AX uses the main screen as reference with (0,0) at its top-left corner
     func convertAXToAppKit(_ axRect: CGRect) -> CGRect {
-        guard let mainScreen = NSScreen.main ?? NSScreen.screens.first else {
+        guard let mainScreen = NSScreen.screens.first(where: { $0.frame.origin == .zero }) ?? NSScreen.screens.first else {
             return axRect
         }
         let mainHeight = mainScreen.frame.height
