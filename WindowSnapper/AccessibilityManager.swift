@@ -180,6 +180,56 @@ final class AccessibilityManager {
         }
     }
     
+    // snap using sectional logic
+    func snapSectionalLogic(on command: UInt32) {
+        guard let window = frontmostWindow() else {
+            print("DEBUG: frontmostWindow() returned nil:")
+            return
+        }
+        
+        guard let currentAXFrame = frame(of: window) else {
+            print("DEBUG: frame(of:) returned nil")
+            return
+        }
+        let convertedFrame = convertAXToAppKit(currentAXFrame)
+        
+        guard let screen = screenContaining(appKitRect: convertedFrame) else {
+            print("DEBUG: screenContaining(rect:) returned nil")
+            return
+        }
+        let screenFrame = screen.visibleFrame
+        
+        if let targetRect = SectionalLogic.shared.snapLogicController(for: command, appRect: convertedFrame, on: screenFrame) {
+            snapFrontmostWindow(
+                screen: screen,
+                window: window,
+                on: screenFrame
+            ) {_ in
+                    targetRect
+                }
+        } else {
+            minimize(window: window)
+        }
+    }
+    
+    func minimize(window: AXUIElement) {
+        var minimized = true as CFBoolean
+        let result = AXUIElementSetAttributeValue(
+            window,
+            kAXMinimizedAttribute as CFString,
+            minimized
+        )
+    }
+    
+    // overloaded function with more inputs --> keep continuity on window, screenframe, screen etc.
+    func snapFrontmostWindow(screen: NSScreen, window: AXUIElement,  on screenFrame: CGRect, using rectBuilder: (CGRect) -> CGRect) {
+        let targetAppKit = rectBuilder(screenFrame)
+        print("Target AppKit:", targetAppKit)
+        let targetAX = convertAppKitToAX(targetAppKit, screen: screen)
+        print("Target AX:", targetAX)
+        setFrame(targetAX, for: window)
+    }
+    
     // main snapping function
     func snapFrontmostWindow(using rectBuilder: (CGRect) -> CGRect) {
         /*
