@@ -27,12 +27,8 @@ struct WindowSnapperApp: App {
             VStack(alignment: .leading, spacing: 8) {
                 Text("WindowSnapper").font(.headline)
                 
-                Button("Snap Left") {
-                    AccessibilityManager.shared.snapFrontmostWindowLeftHalf()
-                }
-                
-                Button("Snap Right") {
-                    AccessibilityManager.shared.snapFrontmostWindowRightHalf()
+                Button("About WindowSnapper") {
+                    InfoWindowController.shared.show()
                 }
                 
                 Divider()
